@@ -102,7 +102,7 @@ app.post('/api/addFeed', upload.single('file'), async (req, res) => {
 });
 
 
-app.post('/api/addComentario',  async (req, res) => {
+app.post('/api/addComentario', async (req, res) => {
     try {
         const data = req.body; // Captura os campos enviados
         console.log(data)
@@ -124,7 +124,7 @@ app.get('/api/homenagens/:id', upload.single('file'), async (req, res) => {
     }
 });
 
-app.post('/api/addHomenagens',  async (req, res) => {
+app.post('/api/addHomenagens', async (req, res) => {
     try {
         const data = req.body; // Captura os campos enviados
         console.log(data);
@@ -223,6 +223,10 @@ app.get('/api/isLogged', async (req, res) => {
     }
 })
 
+
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'frontend/build'));
+});
 const port = process.env.PORT || 3000;
 const server = app.listen(port, () => {
     console.log('Order API is running at ' + port);
