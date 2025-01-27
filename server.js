@@ -224,9 +224,10 @@ app.get('/api/isLogged', async (req, res) => {
 })
 
 
+
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'frontend/build'));
-});
+    res.sendFile(path.join(__dirname, 'frontend/build', 'index.html'));
+  });
 const port = process.env.PORT || 3000;
 const server = app.listen(port, () => {
     console.log('Order API is running at ' + port);
