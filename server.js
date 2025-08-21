@@ -235,11 +235,38 @@ app.get('/api/isLogged', async (req, res) => {
 })
 
 
+const { saveCodes, listCodes } = require('./api/codigos');
+
+app.post('/api/codigos', async (req, res) => {
+    try {
+        const payload = req.body || {};
+        const { codes } = payload;
+        const result = await saveCodes(codes);
+        res.json(result);
+    } catch (err) {
+        res.status(400).json({ message: err.message || 'Erro ao salvar códigos' });
+    }
+});
+
+app.get('/api/codigos', async (req, res) => {
+    try {
+        const items = await listCodes();
+        res.json(items);
+    } catch (err) {
+        res.status(500).json({ message: 'Erro ao listar códigos' });
+    }
+});
 
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'frontend/build', 'index.html'));
-  });
-const port = process.env.PORT || 3000;
-const server = app.listen(port, () => {
-    console.log('Order API is running at ' + port);
+	res.sendFile(path.join(__dirname, 'frontend/build', 'index.html'));
 });
+
+// Start server only when running locally; export app for serverless environments (e.g., Vercel)
+if (require.main === module) {
+	const port = process.env.PORT || 3000;
+	app.listen(port, () => {
+		console.log('Order API is running at ' + port);
+	});
+}
+
+module.exports = app;
