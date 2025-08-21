@@ -14,6 +14,7 @@ async function getUser(data) {
     try {
         const querySnapshot = await getDocs(q);
         const user = querySnapshot.docs[0];
+        console.log(login, senha)
         const data = user.data()
         if (user) {
             const token = jwt.sign({ userId: user.id, permission: data.type }, process.env.JWT_SECRET, { expiresIn: '24h' });
