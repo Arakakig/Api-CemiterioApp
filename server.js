@@ -7,7 +7,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 const MAX_FILE_SIZE = 1 * 1024 * 1024 * 1024; // 1GB em bytes
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { getUser, isLogged, cadastrarUser, cadastrarUserGoogle, loginComGoogle } = require('./api/authentication.js');
+const { getUser, isLogged, cadastrarUser, cadastrarUserGoogle, loginComGoogle, addEditorFalecido } = require('./api/authentication.js');
 const genAI = new GoogleGenerativeAI('AIzaSyDbdGkw6FHzSGReWGcDgHb-1AYJ60T0X-8');
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-8b" });
 const path = require('path');
@@ -211,6 +211,17 @@ app.post('/api/cadastrarUserGoogle', async (req, res) => {
     }
 })
 
+app.post('/api/addEditorFalecido', async (req, res) => {
+    try {
+        const data = req.body;
+        const result = await addEditorFalecido(data);
+        console.log(result)
+        res.json(result);
+    }
+    catch (error) {
+        res.status(500).json({ message: 'Erro ao adicionar editor', error: error.message });
+    }
+})
 
 app.get('/api/isLogged', async (req, res) => {
     const token = req.header('x-access-token');

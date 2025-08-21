@@ -51,13 +51,12 @@ async function addDataBibiografia(dataReceived) {
 
 async function addImageVideo(dataReceived, perfilUrl) {
     try {
-        const id = uniKey(20);
         let dataAux = { ...dataReceived };
         if (perfilUrl) {
             dataAux.url = perfilUrl
         }
         console.log(dataAux)
-        await setDoc(doc(db, "feed", id), { ...dataAux });
+        await setDoc(doc(db, "feed", dataAux.id), { ...dataAux });
         return dataAux;
     } catch (error) {
         console.error('Erro ao fazer a requisição:', error.message);
@@ -69,16 +68,27 @@ async function addImageVideo(dataReceived, perfilUrl) {
 async function addComentario(dataReceived) {
     try {
         // Referência ao documento no Firestore
+        console.log(dataReceived)
         const docRef = doc(db, "feed", dataReceived.idImagem);
+        const snap = await getDoc(docRef);
+        console.log(snap.data())
+        const existing = snap.exists() ? snap.data().comentarios : undefined;
 
-        // Cria ou atualiza o campo de comentários
-        await setDoc(
-            docRef,
-            {
-                comentarios: arrayUnion(dataReceived), // Adiciona um novo comentário no array
-            },
-            { merge: true } // Garante que outros campos existentes não serão sobrescritos
-        );
+        // Garante que o campo seja um array
+        if (!Array.isArray(existing)) {
+            await setDoc(
+                docRef,
+                { comentarios: [dataReceived] },
+                { merge: true }
+            );
+        } else {
+            // Adiciona ao array existente
+            await setDoc(
+                docRef,
+                { comentarios: arrayUnion(dataReceived) },
+                { merge: true }
+            );
+        }
 
         return { success: true, message: "Comentário adicionado com sucesso!" };
     } catch (error) {
@@ -89,21 +99,32 @@ async function addComentario(dataReceived) {
 
 async function addHomenagem(dataReceived) {
     try {
-        // Referência ao documento no Firestore
-        const docRef = doc(db, "homenagens", dataReceived.id);
+        // Referência ao documento do falecido no Firestore
+        const falecidoId = dataReceived.idFalecido || dataReceived.id;
+        const docRef = doc(db, "falecido", falecidoId);
 
-        // Cria ou atualiza o campo de comentários
-        await setDoc(
-            docRef,
-            {
-                comentarios: arrayUnion(dataReceived), // Adiciona um novo comentário no array
-            },
-            { merge: true } // Garante que outros campos existentes não serão sobrescritos
-        );
+        const snap = await getDoc(docRef);
+        const existing = snap.exists() ? snap.data().homenagens : undefined;
 
-        return { success: true, message: "Comentário adicionado com sucesso!" };
+        // Garante que o campo seja um array
+        if (!Array.isArray(existing)) {
+            await setDoc(
+                docRef,
+                { homenagens: [dataReceived] },
+                { merge: true }
+            );
+        } else {
+            // Adiciona ao array existente
+            await setDoc(
+                docRef,
+                { homenagens: arrayUnion(dataReceived) },
+                { merge: true }
+            );
+        }
+
+        return { success: true, message: "Homenagem adicionada com sucesso!" };
     } catch (error) {
-        console.error("Erro ao adicionar comentário:", error.message);
+        console.error("Erro ao adicionar homenagem:", error.message);
         return { success: false, error: error.message };
     }
 }
@@ -130,18 +151,13 @@ async function getFeed(id) {
 
 async function getHomenagens(id) {
     try {
-        const data = [];
-
-        const querySnap = await getDocs(
-            query(
-                collection(db, "homenagens"),
-                where('idFalecido', "==", id)
-            )
-        );
-        querySnap.forEach((doc) => {
-            data.push(doc.data());
-        });
-        return data;
+        const docRef = doc(db, "falecido", id);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            const dadosFalecido = docSnap.data();
+            return dadosFalecido.homenagens || [];
+        }
+        return [];
     } catch (error) {
         console.error('Erro ao fazer a requisição:', error.message);
         return null;
@@ -164,12 +180,24 @@ async function changeDataBibiografia(dataReceived, foto = null) {
 
 
 async function uploadArquivo(data, file) {
-    const dataAux = { ...data }
-    const nomeArquivo = `/${dataAux.id ? dataAux.id : dataAux.idFalecido}/${uniKey(10)}.png`
-    console.log(nomeArquivo)
+    const dataAux = { ...data };
+    const falecidoId = dataAux.id ? dataAux.id : dataAux.idFalecido;
+    const subDiretorio = dataAux.idFalecido ? 'feed' : 'perfil';
+
+    // Define a extensão do arquivo a partir do nome original ou do mimetype
+    const originalName = file.originalname || '';
+    const extFromName = originalName.includes('.') ? originalName.split('.').pop() : '';
+    const extFromMime = (file.mimetype && file.mimetype.split('/')[1]) || '';
+    const extensao = (extFromName || extFromMime || 'bin').toLowerCase();
+
+    const nomeArquivo = `falecidos/${falecidoId}/${subDiretorio}/${Date.now()}-${uniKey(10)}.${extensao}`;
+    console.log('Caminho de upload:', nomeArquivo);
+
     const storageRef = ref(storage, nomeArquivo);
+    const metadata = file.mimetype ? { contentType: file.mimetype } : undefined;
+
     try {
-        const snapshot = await uploadBytes(storageRef, file.buffer);
+        await uploadBytes(storageRef, file.buffer, metadata);
         const downloadURL = await getDownloadURL(storageRef);
         return downloadURL;
     } catch (error) {

@@ -1,5 +1,5 @@
 const { db } = require('../firebase');
-const { collection, query, where, getDocs, doc, getDoc, setDoc } = require('firebase/firestore');
+const { collection, query, where, getDocs, doc, getDoc, setDoc, arrayUnion } = require('firebase/firestore');
 const { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } = require('../firebase');
 const jwt = require('jsonwebtoken');
 const { uniKey } = require('../functions');
@@ -8,8 +8,9 @@ require('dotenv').config()
 async function getUser(data) {
     const login = data.user;
     const senha = data.password;
+
     const usersRef = collection(db, "users");
-    const q = query(usersRef, where("login", "==", login), where("password", "==", senha));
+    const q = query(usersRef, where("email", "==", login), where("password", "==", senha));
     try {
         const querySnapshot = await getDocs(q);
         const user = querySnapshot.docs[0];
@@ -61,6 +62,17 @@ async function cadastrarUser(data) {
     } catch (error) {
         console.error("Erro ao cadastrar usuário:", error);
         return { success: false, message: "Erro ao cadastrar usuário." };
+    }
+}
+
+async function addEditorFalecido(data) {
+    const docRef = doc(db, "falecido", data.falecidoId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        await setDoc(docRef, { editores: arrayUnion(data.email), dataCreated: new Date() }, { merge: true });
+        return { success: true, message: "Editor adicionado com sucesso." };
+    } else {
+        return { success: false, message: "Falecido não encontrado." };
     }
 }
 
@@ -156,4 +168,4 @@ async function havePermissionAdministrador(req, res, next) {
 
     }
 }
-module.exports = { loginComGoogle, cadastrarUserGoogle, cadastrarUser, getUser, verificarToken, isLogged, havePermissionEditor, havePermissionAdministrador };
+module.exports = { loginComGoogle, cadastrarUserGoogle, cadastrarUser, getUser, verificarToken, isLogged, havePermissionEditor,addEditorFalecido, havePermissionAdministrador };
