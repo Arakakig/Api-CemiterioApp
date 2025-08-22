@@ -44,6 +44,14 @@ async function saveCodes(codes) {
     return { saved, skipped, total: uniqueCodes.length, results };
 }
 
+async function updateCode(data) {
+    const ref = doc(db, 'codigos', data.id);
+    console.log(data, data.id)
+    await setDoc(ref, data);
+    return { id, data };
+}
+
+
 // List all codes with normalized timestamps
 async function listCodes() {
     const ref = collection(db, 'codigos');
@@ -74,4 +82,4 @@ async function listCodes() {
     return items;
 }
 
-module.exports = { saveCodes, listCodes };
+module.exports = { saveCodes, listCodes, updateCode};

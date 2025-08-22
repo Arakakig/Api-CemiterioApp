@@ -1,5 +1,6 @@
 const express = require('express');
 const { addDataBibiografia, getDataBiografia, getAllBiografia, changeDataBibiografia, uploadArquivo, uploadFotoPerfil, getFeed, addImageVideo, addComentario, addHomenagem, getHomenagens } = require('./api/addData.js'); // Corrigido o caminho do módulo
+const { saveCodes, listCodes, updateCode } = require('./api/codigos');
 const cors = require('cors');
 const app = express();
 const multer = require('multer');
@@ -235,7 +236,6 @@ app.get('/api/isLogged', async (req, res) => {
 })
 
 
-const { saveCodes, listCodes } = require('./api/codigos');
 
 app.post('/api/codigos', async (req, res) => {
     try {
@@ -256,6 +256,19 @@ app.get('/api/codigos', async (req, res) => {
         res.status(500).json({ message: 'Erro ao listar códigos' });
     }
 });
+
+app.put('/api/codigos/:id', async (req, res) => {
+    try {
+        console.log('foi')
+        const data = req.body;
+        const result = await updateCode( data);
+        console.log(result)
+        res.json(result);
+    }
+    catch (error) {
+        res.status(500).json({ message: 'Erro ao adicionar editor', error: error.message });
+    }
+})
 
 app.get('*', (req, res) => {
 	res.sendFile(path.join(__dirname, 'frontend/build', 'index.html'));
